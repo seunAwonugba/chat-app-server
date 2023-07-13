@@ -9,12 +9,15 @@ const http = require("http");
 const httpServer = http.createServer(app);
 
 const { Server } = require("socket.io");
-const io = new Server(httpServer);
+app.use(cors());
+
+const io = new Server(httpServer, {
+    cors: process.env.CLIENT_BASE_URL,
+});
 
 const port = process.env.port;
 const host = process.env.host;
 
-app.use(cors());
 app.use(express.json());
 
 app.get("/", (req, res) => {
@@ -24,12 +27,20 @@ app.get("/", (req, res) => {
     });
 });
 
-const user = 0;
 io.on("connection", (socket) => {
-    console.log(`User ${user++} is connected`);
+    console.log(`Initial client ${socket.id} is connected`);
 
-    socket.on("chat_message", (msg) => {
+    socket.on("message_from_client", (msg) => {
         console.log(msg);
+
+        socket.emit("message_from_server", (msg) => {
+            console.log(`Server sends message  ${socket.id} is connected`);
+            console.log(`message from server ${msg}`);
+        });
+    });
+
+    socket.on("disconnected", (msg) => {
+        console.log(`User ${socket.id} is disconnected`);
     });
 });
 
